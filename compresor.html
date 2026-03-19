@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Pro - Compresor de Imágenes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --secondary: #10B981;
+            --secondary-hover: #059669;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --bg-gradient-1: #0f172a;
+            --bg-gradient-2: #1e293b;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2));
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        header h2 { font-weight: 700; letter-spacing: -0.5px; }
+        
+        /* NUEVO: Ajuste responsivo para el menú en celulares */
+        @media(max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px 15px;
+            }
+            nav {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            nav a {
+                margin-left: 0;
+                font-size: 0.95rem;
+            }
+        }
+        nav a { color: #e2e8f0; margin-left: 20px; text-decoration: none; font-weight: 500; transition: color 0.3s; padding-bottom: 5px; }
+        nav a:hover { color: #fff; }
+        .active-link { color: #fff; border-bottom: 2px solid var(--secondary); }
+
+        .hero { text-align: center; color: #fff; padding: 40px 20px 20px; }
+        .hero h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
+        .hero p { color: #94a3b8; font-size: 1.1rem; }
+
+        .container {
+            background: var(--card-bg);
+            width: 95%;
+            max-width: 1100px;
+            margin: 0 auto 40px;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
+        @media(max-width: 768px) { .grid { grid-template-columns: 1fr; gap: 30px; } }
+
+        .controls-panel { display: flex; flex-direction: column; gap: 20px; }
+
+        .card-section {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        h3 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        input[type="file"] {
+            width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #cbd5e1;
+            background: #fff; cursor: pointer; font-size: 0.9rem; transition: border 0.3s;
+        }
+        input[type="file"]:hover { border-color: var(--primary); }
+
+        .slider-group { margin-top: 20px; }
+        .slider-group label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+
+        button {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            margin-top: 10px;
+        }
+        button:active { transform: scale(0.98); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-main { background: var(--secondary); color: #fff; margin-top: 20px; font-size: 1.1rem;}
+        .btn-main:hover:not(:disabled) { background: var(--secondary-hover); }
+        
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-warning:hover:not(:disabled) { background: #d97706; }
+
+        .info-alert {
+            background: #e0f2fe; border: 1px solid #bae6fd; color: #0369a1;
+            padding: 12px; border-radius: 10px; font-size: 0.85rem; margin-top: 15px; line-height: 1.4;
+        }
+
+        .viewer-panel { display: flex; flex-direction: column; gap: 20px; }
+
+        .preview-box {
+            background: #f1f5f9; border-radius: 16px; border: 2px dashed var(--border);
+            min-height: 350px; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; position: relative;
+        }
+
+        .preview-box img { max-width: 100%; max-height: 400px; object-fit: contain; display: none; }
+        .placeholder-text { color: var(--text-muted); font-weight: 500; text-align: center; padding: 20px;}
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
+        .stat-card.success { background: #f0fdf4; border-color: #bbf7d0; }
+        .stat-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;}
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-top: 5px; }
+        .stat-card.success .stat-value { color: #166534; }
+
+        footer { margin-top: auto; padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>QR PRO</h2>
+    <nav>
+        <a href="index.html">Generador</a>
+        <a href="lector.html">Lector QR</a>
+        <a href="#" class="active-link">Compresor</a>
+    </nav>
+</header>
+
+<div class="hero">
+    <h1>Reduce el peso de tus imágenes</h1>
+    <p>Optimiza tus fotos en segundos ⚡</p>
+</div>
+
+<div class="container">
+    <div class="grid">
+        
+        <div class="controls-panel">
+            <div class="card-section">
+                <h3>🖼️ Sube tu imagen</h3>
+                <input type="file" id="upload-image" accept="image/*" onchange="loadImage(event)">
+            </div>
+
+            <div class="card-section">
+                <h3>⚙️ Ajustes de Compresión</h3>
+                
+                <div class="slider-group">
+                    <label><span>Calidad de Imagen</span> <span id="quality-val">80%</span></label>
+                    <input type="range" id="quality" min="1" max="100" value="80" oninput="updateCompression()">
+                </div>
+
+                <div class="slider-group">
+                    <label><span>Reducir Tamaño (Resolución)</span> <span id="scale-val">100%</span></label>
+                    <input type="range" id="scale" min="1" max="100" value="100" oninput="updateCompression()">
+                </div>
+
+                <button class="btn-warning" id="btn-extreme" onclick="applyExtremeQRMode()" disabled>⚠️ Forzar a 2KB (Modo QR)</button>
+                
+                <div class="info-alert">
+                    <strong>Nota sobre la calidad:</strong> Reducir una foto a menos de 2 KB implica eliminar el 99% de su información. Es normal que pierda calidad y se pixele drásticamente.
+                </div>
+            </div>
+
+            <button class="btn-main" id="btn-download" onclick="downloadImage()" disabled>⬇️ Descargar Imagen</button>
+        </div>
+
+        <div class="viewer-panel">
+            <div class="preview-box">
+                <p class="placeholder-text" id="placeholder">Sube una imagen para ver la vista previa aquí.</p>
+                <img id="preview-img" alt="Vista previa de la imagen">
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-title">Peso Original</div>
+                    <div class="stat-value" id="original-size">-- KB</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-title">Peso Comprimido</div>
+                    <div class="stat-value" id="compressed-size">-- KB</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer>© 2026 QR PRO - Herramienta de código abierto</footer>
+
+<script>
+let originalImageObj = new Image();
+let originalFileName = "imagen-comprimida";
+let compressedDataUrl = "";
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function loadImage(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    originalFileName = file.name.split('.')[0];
+    document.getElementById("original-size").innerText = formatBytes(file.size);
+    
+    document.getElementById("btn-download").disabled = false;
+    document.getElementById("btn-extreme").disabled = false;
+    document.getElementById("placeholder").style.display = "none";
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        originalImageObj.src = e.target.result;
+        originalImageObj.onload = () => {
+            updateCompression();
+        };
+    };
+    reader.readAsDataURL(file);
+}
+
+function updateCompression() {
+    if (!originalImageObj.src) return;
+
+    const qualitySlider = document.getElementById("quality").value;
+    const scaleSlider = document.getElementById("scale").value;
+
+    document.getElementById("quality-val").innerText = qualitySlider + "%";
+    document.getElementById("scale-val").innerText = scaleSlider + "%";
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    
+    const scaleFactor = scaleSlider / 100;
+    canvas.width = Math.max(1, originalImageObj.width * scaleFactor);
+    canvas.height = Math.max(1, originalImageObj.height * scaleFactor);
+
+    ctx.drawImage(originalImageObj, 0, 0, canvas.width, canvas.height);
+
+    const qualityFactor = qualitySlider / 100;
+    compressedDataUrl = canvas.toDataURL("image/jpeg", qualityFactor);
+
+    const previewImg = document.getElementById("preview-img");
+    previewImg.src = compressedDataUrl;
+    previewImg.style.display = "block";
+
+    let base64Length = compressedDataUrl.length - 'data:image/jpeg;base64,'.length;
+    let sizeInBytes = Math.ceil((base64Length * 3) / 4);
+    
+    let compressedSizeElement = document.getElementById("compressed-size");
+    compressedSizeElement.innerText = formatBytes(sizeInBytes);
+
+    // Nuevo límite: 2 KB (2048 bytes)
+    if (sizeInBytes <= 2048) {
+        compressedSizeElement.style.color = "#166534"; 
+    } else {
+        compressedSizeElement.style.color = "#DC2626"; 
+    }
+}
+
+function applyExtremeQRMode() {
+    // Escala al 10% y calidad al 5% para forzar el tamaño a menos de 2KB
+    document.getElementById("scale").value = 10;
+    document.getElementById("quality").value = 5;
+    updateCompression();
+}
+
+function downloadImage() {
+    if (!compressedDataUrl) return;
+
+    const link = document.createElement("a");
+    link.href = compressedDataUrl;
+    link.download = originalFileName + "-comprimida.jpg";
+    link.click();
+}
+</script>
+
+</body>
+</html>

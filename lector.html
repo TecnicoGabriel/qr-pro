@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Lector Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --secondary: #10B981;
+            --secondary-hover: #059669;
+            --danger: #EF4444;
+            --danger-hover: #DC2626;
+            --bg-gradient-1: #0f172a;
+            --bg-gradient-2: #1e293b;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-1), var(--bg-gradient-2));
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            color: #fff;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        header h2 { font-weight: 700; letter-spacing: -0.5px; }
+        
+        /* NUEVO: Ajuste responsivo para el menú en celulares */
+        @media(max-width: 600px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px 15px;
+            }
+            nav {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 15px;
+            }
+            nav a {
+                margin-left: 0;
+                font-size: 0.95rem;
+            }
+        }
+        nav a { color: #e2e8f0; margin-left: 20px; text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        nav a:hover { color: #fff; }
+
+        .hero { text-align: center; color: #fff; padding: 40px 20px 20px; }
+        .hero h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
+        .hero p { color: #94a3b8; font-size: 1.1rem; }
+
+        .container {
+            background: var(--card-bg);
+            width: 95%;
+            max-width: 1000px;
+            margin: 0 auto 40px;
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 40px; }
+        @media(max-width: 768px) { .grid { grid-template-columns: 1fr; gap: 30px; } }
+
+        /* Panel de Controles Izquierdo */
+        .controls-panel { display: flex; flex-direction: column; gap: 20px; }
+
+        .card-section {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+        }
+
+        h3 { font-size: 1.1rem; margin-bottom: 15px; color: var(--text-main); display: flex; align-items: center; gap: 8px; }
+
+        input[type="file"] {
+            width: 100%; padding: 12px; border-radius: 12px; border: 2px dashed #cbd5e1;
+            background: #fff; cursor: pointer; font-size: 0.9rem; transition: border 0.3s;
+        }
+        input[type="file"]:hover { border-color: var(--primary); }
+
+        button, .btn-link {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; display: block; text-align: center; text-decoration: none;
+        }
+        button:active { transform: scale(0.98); }
+
+        .btn-main { background: var(--primary); color: #fff; }
+        .btn-main:hover { background: var(--primary-hover); }
+        
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: var(--danger-hover); }
+
+        .btn-success { background: var(--secondary); color: #fff; }
+        .btn-success:hover { background: var(--secondary-hover); }
+
+        /* Estilos para la nueva caja de portapapeles */
+        .paste-box {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-muted);
+            background: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            outline: none;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .paste-box:focus, .paste-box:hover {
+            border-color: var(--primary);
+            background: #f1f5f9;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        .paste-box b { color: var(--primary); }
+
+        /* Panel del Visor Derecho */
+        .viewer-panel { display: flex; flex-direction: column; gap: 20px; }
+
+        #reader {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+            background: #f1f5f9;
+            min-height: 300px;
+        }
+        
+        #reader img { object-fit: cover; }
+        #reader__dashboard_section_csr span { color: var(--text-main) !important; font-family: 'Inter', sans-serif !important;}
+        #reader__dashboard_section_swaplink { text-decoration: none !important; color: var(--primary) !important; font-weight: bold;}
+
+        /* Caja de Resultados */
+        .result-box {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 25px;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .result-title { font-weight: 700; color: #166534; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;}
+        .result-content { 
+            background: #fff; padding: 15px; border-radius: 10px; 
+            word-break: break-all; color: var(--text-main); font-family: monospace;
+            border: 1px solid #dcfce7; font-size: 1.05rem;
+        }
+
+        .action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+
+        footer { margin-top: auto; padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>QR PRO</h2>
+    <nav>
+        <a href="index.html">Generador</a>
+        <a href="lector.html">Lector QR</a>
+        <a href="compresor.html">Compresor</a>
+    </nav>
+</header>
+
+<div class="hero">
+    <h1>Escáner Inteligente</h1>
+    <p>Lee códigos desde tu cámara, archivos o portapapeles ⚡</p>
+</div>
+
+<div class="container">
+    <div class="grid">
+        
+        <div class="controls-panel">
+            <div class="card-section">
+                <h3>📷 Usar Cámara</h3>
+                <button id="btn-start-cam" class="btn-main" onclick="startScanner()">Activar Cámara</button>
+                <button id="btn-stop-cam" class="btn-danger" onclick="stopScanner()" style="display: none;">🛑 Detener Escáner</button>
+            </div>
+
+            <div class="card-section">
+                <h3>🖼️ Subir Imagen</h3>
+                <input type="file" id="fileInput" accept="image/*" onchange="scanImage()">
+            </div>
+
+            <div class="card-section">
+                <h3>📋 Portapapeles</h3>
+                <div id="paste-area" class="paste-box" tabindex="0">
+                    Haz clic aquí y presiona <br><b>Ctrl + V</b> para pegar la imagen
+                </div>
+            </div>
+        </div>
+
+        <div class="viewer-panel">
+            <div id="reader"></div>
+
+            <div class="result-box" id="result-box">
+                <div class="result-title">✅ ¡Código Detectado!</div>
+                <div class="result-content" id="result-content"></div>
+                
+                <div class="action-buttons">
+                    <button class="btn-main" id="btn-copy" onclick="copyResult()">Copiar Texto</button>
+                    <a id="btn-link" class="btn-success btn-link" style="display: none;" target="_blank">Abrir Enlace 🚀</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<footer>© 2026 QR PRO - Herramienta de código abierto</footer>
+
+<script>
+let html5QrCode;
+let isScanning = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+    html5QrCode = new Html5Qrcode("reader");
+    setupPasteArea(); // Inicializar el evento de la caja de pegado
+});
+
+function showResult(decodedText) {
+    if(isScanning) stopScanner();
+    
+    const resultBox = document.getElementById("result-box");
+    const resultContent = document.getElementById("result-content");
+    const btnLink = document.getElementById("btn-link");
+
+    resultContent.innerText = decodedText;
+    resultBox.style.display = "flex";
+
+    if (decodedText.startsWith("http://") || decodedText.startsWith("https://")) {
+        btnLink.style.display = "block";
+        btnLink.href = decodedText;
+    } else {
+        btnLink.style.display = "none";
+    }
+}
+
+function startScanner() {
+    document.getElementById("btn-start-cam").style.display = "none";
+    document.getElementById("btn-stop-cam").style.display = "block";
+    document.getElementById("result-box").style.display = "none";
+
+    html5QrCode.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => { showResult(decodedText); },
+        (errorMessage) => {}
+    ).then(() => { isScanning = true; })
+     .catch((err) => {
+        alert("No se pudo iniciar la cámara. Verifica que diste los permisos.");
+        stopScanner();
+    });
+}
+
+function stopScanner() {
+    if (html5QrCode && isScanning) {
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            document.getElementById("btn-start-cam").style.display = "block";
+            document.getElementById("btn-stop-cam").style.display = "none";
+        }).catch(err => console.log(err));
+    }
+}
+
+function scanImage() {
+    let fileInput = document.getElementById("fileInput");
+    if (!fileInput.files || fileInput.files.length === 0) return;
+
+    let file = fileInput.files[0];
+    document.getElementById("result-box").style.display = "none";
+
+    if(isScanning) stopScanner();
+
+    html5QrCode.scanFile(file, true)
+        .then(decodedText => { showResult(decodedText); })
+        .catch(err => {
+            alert("❌ No se detectó ningún código QR en esta imagen. Intente con otra ps.");
+            fileInput.value = ""; 
+        });
+}
+
+// NUEVA LÓGICA PARA LA CAJA DE PEGADO
+function setupPasteArea() {
+    const pasteArea = document.getElementById('paste-area');
+
+    pasteArea.addEventListener('paste', function(e) {
+        e.preventDefault();
+        
+        // Obtener los datos del portapapeles
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        let imageFound = false;
+
+        for (let index in items) {
+            const item = items[index];
+            
+            // Verificar si lo que se pegó es una imagen
+            if (item.kind === 'file' && item.type.startsWith('image/')) {
+                imageFound = true;
+                const file = item.getAsFile();
+                
+                document.getElementById("result-box").style.display = "none";
+                if(isScanning) stopScanner();
+
+                // Escanear el archivo pegado
+                html5QrCode.scanFile(file, true)
+                    .then(decodedText => {
+                        showResult(decodedText);
+                    })
+                    .catch(err => {
+                        alert("❌ No se detectó ningún código QR en la imagen. Intente con otra ps.");
+                    });
+                
+                break; // Detener el bucle una vez que encontramos la imagen
+            }
+        }
+        
+        // Si pegaron texto u otra cosa que no sea imagen
+        if (!imageFound) {
+            alert("⚠️ Por favor, pega solo una imagen (no texto ni archivos de otro tipo).");
+        }
+    });
+}
+
+function copyResult() {
+    const text = document.getElementById("result-content").innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        let btn = document.getElementById("btn-copy");
+        let originalText = btn.innerText;
+        btn.innerText = "¡Copiado! ✓";
+        btn.style.background = "var(--secondary)"; 
+        
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "var(--primary)"; 
+        }, 2000);
+    });
+}
+</script>
+
+</body>
+</html>
