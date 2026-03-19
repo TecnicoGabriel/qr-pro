@@ -6,6 +6,8 @@
     <title>QR Generator Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3912711241359030"
+     crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -54,7 +56,6 @@
         
         nav a:hover { color: #fff; }
 
-        /* NUEVO: Ajuste responsivo para el menú en celulares */
         @media(max-width: 600px) {
             header {
                 flex-direction: column;
@@ -88,7 +89,10 @@
         }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-        @media(max-width: 768px) { .grid { grid-template-columns: 1fr; gap: 30px; } }
+        @media(max-width: 768px) { 
+            .grid { grid-template-columns: 1fr; gap: 30px; } 
+            .container { padding: 25px 20px; } /* Menos padding en móviles para ganar espacio */
+        }
 
         .form-group { margin-bottom: 20px; }
         
@@ -159,6 +163,7 @@
             border-top: 1px solid var(--border);
         }
 
+        /* AJUSTES IMPORTANTES PARA EL VISOR DEL QR */
         .qr-wrapper {
             display: flex;
             flex-direction: column;
@@ -166,10 +171,18 @@
             justify-content: center;
             background: #f8fafc;
             border-radius: 20px;
-            padding: 30px;
+            padding: 30px 20px; /* Ajustado el padding */
             border: 2px dashed #cbd5e1;
-            height: 100%;
-            min-height: 350px;
+            /* Eliminado min-height: 350px que causaba problemas en móvil */
+            height: fit-content; /* Se adapta a su contenido */
+            margin-top: 20px; /* Separación en vista móvil */
+        }
+        
+        @media(min-width: 769px) {
+            .qr-wrapper {
+                margin-top: 0; /* Quita el margen en PC */
+                min-height: 100%; /* Ocupa el alto disponible en la grilla */
+            }
         }
 
         #qrcode {
@@ -181,16 +194,24 @@
             border-radius: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
+            max-width: 100%; /* Asegura que no se desborde */
+            overflow: hidden; /* Oculta cualquier desbordamiento interno */
         }
 
-        #qrcode img { display: block; margin: 0 auto; }
+        #qrcode img, #qrcode canvas { 
+            display: block; 
+            margin: 0 auto; 
+            max-width: 100%; /* El QR se achica si la pantalla es muy pequeña */
+            height: auto !important; /* Mantiene la proporción */
+        }
 
         #preview {
             font-size: 0.85rem;
             color: var(--text-muted);
             text-align: center;
-            word-break: break-all;
+            word-break: break-all; /* CRÍTICO: Rompe textos largos (URLs) para que no rompan el ancho */
             max-width: 100%;
+            padding: 0 10px;
         }
 
         footer { margin-top: auto; padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem; }

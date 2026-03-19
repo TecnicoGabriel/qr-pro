@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>QR Pro - Compresor de Imágenes</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3912711241359030"
+     crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -45,27 +47,16 @@
 
         header h2 { font-weight: 700; letter-spacing: -0.5px; }
         
-        /* NUEVO: Ajuste responsivo para el menú en celulares */
-        @media(max-width: 600px) {
-            header {
-                flex-direction: column;
-                gap: 15px;
-                padding: 20px 15px;
-            }
-            nav {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 15px;
-            }
-            nav a {
-                margin-left: 0;
-                font-size: 0.95rem;
-            }
-        }
         nav a { color: #e2e8f0; margin-left: 20px; text-decoration: none; font-weight: 500; transition: color 0.3s; padding-bottom: 5px; }
         nav a:hover { color: #fff; }
         .active-link { color: #fff; border-bottom: 2px solid var(--secondary); }
+
+        /* AJUSTE RESPONSIVO PARA EL MENÚ EN CELULARES */
+        @media(max-width: 600px) {
+            header { flex-direction: column; gap: 15px; padding: 20px 15px; }
+            nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+            nav a { margin-left: 0; font-size: 0.95rem; }
+        }
 
         .hero { text-align: center; color: #fff; padding: 40px 20px 20px; }
         .hero h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 10px; }
@@ -82,6 +73,7 @@
         }
 
         .grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 40px; }
+        /* AJUSTE RESPONSIVO PARA LAS CAJAS EN CELULARES */
         @media(max-width: 768px) { .grid { grid-template-columns: 1fr; gap: 30px; } }
 
         .controls-panel { display: flex; flex-direction: column; gap: 20px; }
@@ -103,7 +95,7 @@
 
         .slider-group { margin-top: 20px; }
         .slider-group label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.9rem; margin-bottom: 8px; }
-        input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; }
+        input[type="range"] { width: 100%; accent-color: var(--primary); cursor: pointer; margin-top: 5px; height: 25px;}
 
         button {
             width: 100%; padding: 14px; border: none; border-radius: 12px;
@@ -128,18 +120,18 @@
 
         .preview-box {
             background: #f1f5f9; border-radius: 16px; border: 2px dashed var(--border);
-            min-height: 350px; display: flex; align-items: center; justify-content: center;
-            overflow: hidden; position: relative;
+            min-height: 300px; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; position: relative; padding: 10px;
         }
 
-        .preview-box img { max-width: 100%; max-height: 400px; object-fit: contain; display: none; }
+        .preview-box img { max-width: 100%; max-height: 400px; object-fit: contain; display: none; border-radius: 8px; }
         .placeholder-text { color: var(--text-muted); font-weight: 500; text-align: center; padding: 20px;}
 
         .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .stat-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 15px; text-align: center; }
         .stat-card.success { background: #f0fdf4; border-color: #bbf7d0; }
-        .stat-title { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;}
-        .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-top: 5px; }
+        .stat-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;}
+        .stat-value { font-size: 1.2rem; font-weight: 700; color: var(--text-main); margin-top: 5px; word-break: break-word; }
         .stat-card.success .stat-value { color: #166534; }
 
         footer { margin-top: auto; padding: 20px; text-align: center; color: #94a3b8; font-size: 0.9rem; }
@@ -262,10 +254,25 @@ function updateCompression() {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     
-    const scaleFactor = scaleSlider / 100;
-    canvas.width = Math.max(1, originalImageObj.width * scaleFactor);
-    canvas.height = Math.max(1, originalImageObj.height * scaleFactor);
+    // LÍMITE DE SEGURIDAD PARA CELULARES (Evita que el navegador colapse por falta de RAM)
+    const MAX_SAFE_SIZE = 1920; 
+    let baseWidth = originalImageObj.width;
+    let baseHeight = originalImageObj.height;
 
+    if (baseWidth > baseHeight && baseWidth > MAX_SAFE_SIZE) {
+        baseHeight *= MAX_SAFE_SIZE / baseWidth;
+        baseWidth = MAX_SAFE_SIZE;
+    } else if (baseHeight > MAX_SAFE_SIZE) {
+        baseWidth *= MAX_SAFE_SIZE / baseHeight;
+        baseHeight = MAX_SAFE_SIZE;
+    }
+
+    // Aplicar la escala del slider sobre el tamaño seguro
+    const scaleFactor = scaleSlider / 100;
+    canvas.width = Math.max(1, baseWidth * scaleFactor);
+    canvas.height = Math.max(1, baseHeight * scaleFactor);
+
+    // Dibujar la imagen con las nuevas dimensiones
     ctx.drawImage(originalImageObj, 0, 0, canvas.width, canvas.height);
 
     const qualityFactor = qualitySlider / 100;
@@ -281,7 +288,6 @@ function updateCompression() {
     let compressedSizeElement = document.getElementById("compressed-size");
     compressedSizeElement.innerText = formatBytes(sizeInBytes);
 
-    // Nuevo límite: 2 KB (2048 bytes)
     if (sizeInBytes <= 2048) {
         compressedSizeElement.style.color = "#166534"; 
     } else {
@@ -290,7 +296,6 @@ function updateCompression() {
 }
 
 function applyExtremeQRMode() {
-    // Escala al 10% y calidad al 5% para forzar el tamaño a menos de 2KB
     document.getElementById("scale").value = 10;
     document.getElementById("quality").value = 5;
     updateCompression();
@@ -302,7 +307,9 @@ function downloadImage() {
     const link = document.createElement("a");
     link.href = compressedDataUrl;
     link.download = originalFileName + "-comprimida.jpg";
+    document.body.appendChild(link); // Requisito extra para que funcione en iOS/Safari
     link.click();
+    document.body.removeChild(link);
 }
 </script>
 
